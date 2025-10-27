@@ -1,0 +1,1821 @@
+<!DOCTYPE html>
+<!-- saved from url=(0064)file:///C:/Users/putyn/Downloads/finance_dashboard_1c%20(7).html -->
+<html lang="ru"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Дашборд расходов</title>
+    <script src="./Дашборд расходов_files/xlsx.full.min.js.Без названия"></script>
+    <script src="./Дашборд расходов_files/chart.umd.min.js.Без названия"></script>
+    <script src="./Дашборд расходов_files/chartjs-chart-treemap.min.js.Без названия"></script>
+    <script src="./Дашборд расходов_files/chartjs-chart-matrix.min.js.Без названия"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            padding: 15px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-weight: 600;
+            font-size: clamp(1.1rem, 3.5vw, 1.5rem);
+            opacity: 0;
+            animation: fadeIn 0.6s ease-out forwards;
+            line-height: 1.3;
+            padding: 0 10px;
+        }
+
+        .upload-zone {
+            background: white;
+            border: 3px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: clamp(20px, 5vw, 40px);
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeIn 0.6s ease-out 0.2s forwards;
+            touch-action: manipulation;
+        }
+
+        .upload-zone:hover {
+            border-color: #4299e1;
+            background: #f7fafc;
+            transform: translateY(-2px);
+        }
+
+        .upload-zone:active {
+            transform: translateY(0);
+        }
+
+        .upload-zone.dragover {
+            border-color: #3182ce;
+            background: #ebf8ff;
+        }
+
+        .upload-icon {
+            font-size: clamp(32px, 8vw, 48px);
+            color: #a0aec0;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            color: #4a5568;
+            font-size: clamp(14px, 3.5vw, 16px);
+            line-height: 1.5;
+        }
+
+        .upload-text strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .dashboard {
+            display: none;
+            gap: 15px;
+        }
+
+        .dashboard.active {
+            display: grid;
+            grid-template-columns: 1fr;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            opacity: 0;
+            animation: slideUp 0.6s ease-out forwards;
+            overflow: hidden;
+        }
+
+        .chart-card:nth-child(1) { animation-delay: 0.1s; }
+        .chart-card:nth-child(2) { animation-delay: 0.2s; }
+        .chart-card:nth-child(3) { animation-delay: 0.3s; }
+
+        .chart-title {
+            font-size: clamp(14px, 3.5vw, 18px);
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+            line-height: 1.3;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+            width: 100%;
+            touch-action: pan-y;
+        }
+
+        .chart-container.tall {
+            height: 450px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+            font-size: clamp(13px, 3vw, 15px);
+            line-height: 1.5;
+        }
+
+        .error.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .loading {
+            background: #bee3f8;
+            color: #2c5282;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+            text-align: center;
+            font-size: clamp(13px, 3vw, 15px);
+        }
+
+        .loading.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        .info-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .info-panel.active {
+            display: block;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .filters-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-group label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2d3748;
+            white-space: nowrap;
+        }
+
+        .filter-group select {
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            font-size: 14px;
+            color: #2d3748;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 150px;
+        }
+
+        .filter-group select:hover {
+            border-color: #cbd5e0;
+        }
+
+        .filter-group select:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+
+        @media (max-width: 600px) {
+            .filters-panel {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .filter-group {
+                width: 100%;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .filter-group select {
+                width: 100%;
+            }
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .info-item {
+            text-align: center;
+            padding: 10px 5px;
+            background: #f7fafc;
+            border-radius: 8px;
+        }
+
+        .info-value {
+            font-size: clamp(18px, 4.5vw, 24px);
+            font-weight: bold;
+            color: #2d3748;
+            line-height: 1.2;
+        }
+
+        .info-label {
+            font-size: clamp(11px, 2.5vw, 14px);
+            color: #718096;
+            margin-top: 5px;
+            line-height: 1.3;
+        }
+
+        /* Tablet styles */
+        @media (min-width: 600px) and (max-width: 1024px) {
+            body {
+                padding: 20px;
+            }
+
+            .chart-container {
+                height: 400px;
+            }
+
+            .chart-container.tall {
+                height: 500px;
+            }
+
+            .info-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+
+            .chart-card {
+                padding: 20px;
+            }
+        }
+
+        /* Desktop styles */
+        @media (min-width: 1025px) {
+            body {
+                padding: 20px;
+            }
+
+            .chart-container {
+                height: 450px;
+            }
+
+            .chart-container.tall {
+                height: 600px;
+            }
+
+            .info-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 15px;
+            }
+
+            .info-item {
+                padding: 15px 10px;
+            }
+
+            .chart-card {
+                padding: 25px;
+            }
+
+            .chart-title {
+                margin-bottom: 20px;
+            }
+
+            .dashboard {
+                gap: 20px;
+            }
+
+            h1 {
+                margin-bottom: 30px;
+            }
+
+            .upload-zone {
+                margin-bottom: 30px;
+            }
+
+            .info-panel {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+        }
+
+        /* Very small phones */
+        @media (max-width: 374px) {
+            .chart-container {
+                height: 300px;
+            }
+
+            .chart-container.tall {
+                height: 400px;
+            }
+
+            .info-grid {
+                gap: 8px;
+            }
+
+            .info-item {
+                padding: 8px 5px;
+            }
+        }
+
+        /* Landscape mode on phones */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .chart-container {
+                height: 280px;
+            }
+
+            .chart-container.tall {
+                height: 350px;
+            }
+
+            h1 {
+                margin-bottom: 10px;
+                font-size: 1.3rem;
+            }
+        }
+
+        /* iOS Safari specific fixes */
+        @supports (-webkit-touch-callout: none) {
+            body {
+                min-height: -webkit-fill-available;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Анализ бизнеса - Дашборд расходов</h1>
+        
+        <div class="error" id="error"></div>
+        <div class="loading" id="loading">Обработка данных</div>
+        
+        <div class="upload-zone" id="uploadZone">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">
+                <strong>Перетащите файл Excel из 1С сюда</strong><br>
+                или кликните для выбора
+            </div>
+            <input type="file" id="fileInput" accept=".xls,.xlsx">
+        </div>
+
+        <div class="info-panel" id="infoPanel">
+            <div class="info-grid" id="infoGrid"></div>
+        </div>
+
+        <!-- Фильтры -->
+        <div class="filters-panel" id="filtersPanel" style="display: none;">
+            <div class="filter-group">
+                <label>Период:</label>
+                <select id="periodFilter">
+                    <option value="all">Все месяцы</option>
+                    <option value="3">Последние 3 месяца</option>
+                    <option value="6">Последние 6 месяцев</option>
+                    <option value="12">Последние 12 месяцев</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Группа расходов:</label>
+                <select id="groupFilter">
+                    <option value="all">Все группы</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="dashboard" id="dashboard">
+            <!-- Новый график: Cash Flow -->
+            <div class="chart-card">
+                <div class="chart-title">💰 Движение денег (Cash Flow)</div>
+                <div class="chart-container">
+                    <canvas id="cashFlowChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Новый график: Динамика прибыли -->
+            <div class="chart-card">
+                <div class="chart-title">📈 Динамика прибыли по месяцам</div>
+                <div class="chart-container">
+                    <canvas id="profitTrendChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">Структура расходов по группам (нормированная диаграмма)</div>
+                <div class="chart-container">
+                    <canvas id="stackedChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">Детализация расходов по статьям (древовидная карта)</div>
+                <div class="chart-container tall">
+                    <canvas id="treemapChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">Тепловая карта расходов по месяцам</div>
+                <div class="chart-container tall">
+                    <canvas id="heatmapChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Цветовая палитра для разных групп
+        const colorPalette = {
+            'Административные расходы': '#8eacc6',
+            'Закупка материалов': '#d69a9a',
+            'Услуги подряда': '#a8c99a',
+            'Логистика': '#d4b88a',
+            'Маркетинг': '#c4a4c4',
+            'Фонд оплаты труда': '#7db8b8',
+            'Налоги': '#e09090',
+            'Поступления': '#6ba8d4',
+            'Инвестиции': '#9bb09b',
+            'Финансовые операции': '#b8a8c4',
+            'Прочее': '#c4c4c4'
+        };
+
+        // Генератор цветов для статей внутри группы
+        function generateColorForItem(itemName, groupName) {
+            const baseColor = colorPalette[groupName];
+            if (!baseColor) return '#8eacc6';
+            
+            // Получаем RGB из hex
+            const hex = baseColor.replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            
+            // Создаем вариации цвета на основе хеша названия статьи
+            let hash = 0;
+            for (let i = 0; i < itemName.length; i++) {
+                hash = itemName.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            
+            const variation = (hash % 60) - 30; // от -30 до +30
+            
+            const newR = Math.max(0, Math.min(255, r + variation));
+            const newG = Math.max(0, Math.min(255, g + variation));
+            const newB = Math.max(0, Math.min(255, b + variation));
+            
+            return `rgb(${newR}, ${newG}, ${newB})`;
+        }
+
+        let charts = {};
+        let currentParsedData = null;
+        let originalParsedData = null;
+
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const dashboard = document.getElementById('dashboard');
+        const errorDiv = document.getElementById('error');
+        const loadingDiv = document.getElementById('loading');
+        const infoPanel = document.getElementById('infoPanel');
+        const infoGrid = document.getElementById('infoGrid');
+
+        // Обработка изменения размера окна (для поворота экрана на мобильных)
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (currentParsedData && Object.keys(charts).length > 0) {
+                    try {
+                        // Пересоздаем графики при изменении размера
+                        Object.keys(charts).forEach(key => {
+                            if (charts[key]) {
+                                charts[key].destroy();
+                            }
+                        });
+                        charts = {};
+                        
+                        // Пересоздаем с задержкой
+                        setTimeout(() => {
+                            createStackedChart(currentParsedData);
+                            createTreemap(currentParsedData);
+                            createHeatmap(currentParsedData);
+                        }, 50);
+                    } catch (e) {
+                        console.log('Resize error:', e);
+                    }
+                }
+            }, 300);
+        });
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+        
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file) processFile(file);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) processFile(file);
+        });
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.classList.add('active');
+            loadingDiv.classList.remove('active');
+            setTimeout(() => errorDiv.classList.remove('active'), 5000);
+        }
+
+        function showLoading() {
+            loadingDiv.classList.add('active');
+            errorDiv.classList.remove('active');
+        }
+
+        function hideLoading() {
+            loadingDiv.classList.remove('active');
+        }
+
+        function processFile(file) {
+            showLoading();
+            
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: null });
+                    
+                    parseAndVisualize(jsonData);
+                } catch (error) {
+                    showError('Ошибка при чтении файла: ' + error.message);
+                    console.error(error);
+                }
+            };
+            
+            reader.onerror = () => {
+                showError('Не удалось прочитать файл');
+                hideLoading();
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        function parseAndVisualize(data) {
+            try {
+                const parsed = parse1CData(data);
+                
+                if (!parsed || !parsed.expenses || parsed.expenses.length === 0) {
+                    showError('Не удалось найти данные в файле');
+                    return;
+                }
+
+                // Сохраняем данные для пересоздания графиков
+                currentParsedData = parsed;
+
+                // ВАЖНО: Уничтожаем старые графики ПЕРЕД созданием новых
+                Object.keys(charts).forEach(key => {
+                    if (charts[key]) {
+                        try {
+                            charts[key].destroy();
+                        } catch (e) {
+                            console.log('Chart already destroyed:', key);
+                        }
+                    }
+                });
+                charts = {};
+
+                // Очищаем canvas элементы
+                const canvases = ['stackedChart', 'treemapChart', 'heatmapChart'];
+                canvases.forEach(id => {
+                    const canvas = document.getElementById(id);
+                    if (canvas) {
+                        const parent = canvas.parentNode;
+                        const newCanvas = canvas.cloneNode(true);
+                        parent.replaceChild(newCanvas, canvas);
+                    }
+                });
+
+                // Показываем инфо-панель
+                displayInfoPanel(parsed);
+                
+                // Показываем фильтры
+                setupFilters(parsed);
+
+                // Небольшая задержка перед созданием графиков
+                setTimeout(() => {
+                    try {
+                        createCashFlowChart(parsed);
+                        createProfitTrendChart(parsed);
+                        createStackedChart(parsed);
+                        createTreemap(parsed);
+                        createHeatmap(parsed);
+                        hideLoading();
+                    } catch (error) {
+                        showError('Ошибка при создании графиков: ' + error.message);
+                        console.error(error);
+                    }
+                }, 100);
+
+                dashboard.classList.add('active');
+                uploadZone.style.display = 'none';
+
+            } catch (error) {
+                showError('Ошибка при обработке данных: ' + error.message);
+                console.error(error);
+            }
+        }
+
+        function parse1CData(data) {
+            // Находим строку с месяцами (обычно строка 1 или 2)
+            let monthsRow = -1;
+            let months = [];
+            
+            for (let i = 0; i < Math.min(5, data.length); i++) {
+                const row = data[i];
+                if (row && row.length > 4) {
+                    // Проверяем наличие месяцев
+                    const monthPattern = /(ЯНВАРЬ|ФЕВРАЛЬ|МАРТ|АПРЕЛЬ|МАЙ|ИЮНЬ|ИЮЛЬ|АВГУСТ|СЕНТЯБРЬ|ОКТЯБРЬ|НОЯБРЬ|ДЕКАБРЬ)/i;
+                    if (row.some(cell => cell && monthPattern.test(String(cell)))) {
+                        monthsRow = i;
+                        // Собираем месяцы начиная с колонки 4
+                        for (let j = 4; j < row.length; j++) {
+                            if (row[j] && monthPattern.test(String(row[j]))) {
+                                months.push(String(row[j]));
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+
+            if (monthsRow === -1) {
+                throw new Error('Не найдена строка с месяцами');
+            }
+
+            // Парсим статьи расходов
+            const expenses = [];
+            const codePattern = /^(\d+(?:\.\d+)*)\s+(.+)$/;
+
+            for (let i = monthsRow + 2; i < data.length; i++) {
+                const row = data[i];
+                if (!row || row.length < 4) continue;
+
+                // Название в колонке 2
+                const rawName = row[2];
+                if (!rawName || typeof rawName !== 'string') continue;
+
+                const match = rawName.trim().match(codePattern);
+                if (!match) continue;
+
+                const code = match[1];
+                const name = match[2].trim();
+                const level = (code.match(/\./g) || []).length;
+
+                // Значения с колонки 4
+                const values = [];
+                for (let j = 4; j < 4 + months.length; j++) {
+                    const val = row[j];
+                    values.push(val != null && !isNaN(val) ? Number(val) : 0);
+                }
+
+                const total = values.reduce((a, b) => a + b, 0);
+
+                // Определяем группу на основе кода
+                let group = determineGroup(code, name);
+
+                expenses.push({ code, name, level, values, total, group });
+            }
+
+            return { months, expenses };
+        }
+
+        function determineGroup(code, name) {
+            // Исключаем технические статьи
+            if (name.includes('Перемещение между') || 
+                name.includes('курсовая разница') ||
+                code.startsWith('1.3.9.')) {
+                return null; // Исключаем из визуализации
+            }
+            
+            // Только расходы (отрицательные суммы)
+            if (code.startsWith('1.3.1.')) return 'Административные расходы';
+            if (code.startsWith('1.3.3.')) return 'Закупка материалов';
+            if (code.startsWith('1.3.4.')) return 'Услуги подряда';
+            if (code.startsWith('1.3.5.')) return 'Логистика';
+            if (code.startsWith('1.3.6.')) return 'Маркетинг';
+            if (code.startsWith('1.3.7.')) return 'Фонд оплаты труда';
+            if (code.startsWith('1.3.8.')) return 'Налоги';
+            
+            // Доходы
+            if (code.startsWith('1.2.')) return 'Поступления';
+            
+            // Инвестиции
+            if (code.startsWith('4.')) return 'Инвестиции';
+            
+            // Финансовые операции
+            if (code.startsWith('23.')) return 'Финансовые операции';
+            
+            return 'Прочее';
+        }
+
+        function displayInfoPanel(parsed) {
+            // Ищем строку "1 ПРИБЫЛЬ ПО ПОДРАЗДЕЛЕНИЮ"
+            const profitLine = parsed.expenses.find(e => e.code === '1' && e.name.includes('ПРИБЫЛЬ'));
+            
+            // Ищем строку "1.2 ВСЕГО ПОСТУПЛЕНИЙ"
+            const incomeLine = parsed.expenses.find(e => e.code === '1.2');
+            
+            // Ищем строку "1.3 ВСЕГО РАСХОДОВ"
+            const expenseLine = parsed.expenses.find(e => e.code === '1.3');
+            
+            // Используем правильные итоги из файла
+            const totalIncome = incomeLine ? incomeLine.total : 0;
+            const totalExpense = expenseLine ? Math.abs(expenseLine.total) : 0;
+            const profit = profitLine ? profitLine.total : (totalIncome - totalExpense);
+            
+            infoGrid.innerHTML = `
+                <div class="info-item">
+                    <div class="info-value" style="color: #48bb78;">
+                        ${(totalIncome / 1000000).toFixed(1)} млн ₽
+                    </div>
+                    <div class="info-label">Поступления</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" style="color: #f56565;">
+                        ${(totalExpense / 1000000).toFixed(1)} млн ₽
+                    </div>
+                    <div class="info-label">Расходы</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" style="color: ${profit >= 0 ? '#48bb78' : '#f56565'};">
+                        ${(profit / 1000000).toFixed(1)} млн ₽
+                    </div>
+                    <div class="info-label">Прибыль</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value">
+                        ${parsed.months.length} мес.
+                    </div>
+                    <div class="info-label">Период</div>
+                </div>
+            `;
+            
+            infoPanel.classList.add('active');
+        }
+
+        function createStackedChart(parsed, selectedGroup = 'all') {
+            const ctx = document.getElementById('stackedChart');
+            
+            // ЕСЛИ ВЫБРАНА КОНКРЕТНАЯ ГРУППА - показываем детализацию по статьям внутри неё
+            if (selectedGroup !== 'all') {
+                // Берем только статьи из выбранной группы
+                const groupItems = parsed.expenses.filter(e => 
+                    e.level === 3 && e.total < 0 && e.group === selectedGroup
+                );
+                
+                if (groupItems.length === 0) {
+                    console.log('No items for selected group');
+                    return;
+                }
+                
+                // Вычисляем общие суммы по месяцам для группы
+                const monthTotals = parsed.months.map((_, i) => {
+                    return groupItems.reduce((sum, item) => sum + Math.abs(item.values[i]), 0);
+                });
+                
+                // Создаем dataset для каждой статьи
+                const datasets = groupItems.map(item => ({
+                    label: item.name,
+                    data: item.values.map((v, i) => monthTotals[i] > 0 ? (Math.abs(v) / monthTotals[i] * 100) : 0),
+                    backgroundColor: generateColorForItem(item.name, selectedGroup),
+                    borderWidth: 0
+                }));
+                
+                const isMobile = window.innerWidth < 600;
+                const isTablet = window.innerWidth >= 600 && window.innerWidth < 1024;
+                const fontSize = isMobile ? 9 : (isTablet ? 10 : 11);
+                const legendFontSize = isMobile ? 10 : (isTablet ? 11 : 11);
+                
+                // Меняем заголовок графика
+                const chartTitle = document.querySelector('#stackedChart').closest('.chart-card').querySelector('.chart-title');
+                if (chartTitle) {
+                    chartTitle.textContent = `Детализация группы "${selectedGroup}" (нормированная диаграмма)`;
+                }
+                
+                charts.stacked = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: parsed.months,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        scales: {
+                            x: {
+                                stacked: true,
+                                grid: { display: false },
+                                ticks: { 
+                                    font: { size: fontSize },
+                                    maxRotation: isMobile ? 45 : 0,
+                                    minRotation: isMobile ? 45 : 0
+                                }
+                            },
+                            y: {
+                                stacked: true,
+                                max: 100,
+                                ticks: {
+                                    callback: value => value + '%',
+                                    font: { size: fontSize }
+                                },
+                                grid: { 
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom',
+                                labels: {
+                                    boxWidth: 12,
+                                    padding: isMobile ? 8 : 12,
+                                    font: {
+                                        size: legendFontSize,
+                                        weight: '500'
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                                padding: isMobile ? 12 : 16,
+                                titleFont: { size: isMobile ? 13 : 15, weight: 'bold' },
+                                bodyFont: { size: isMobile ? 12 : 14 },
+                                bodySpacing: 4,
+                                callbacks: {
+                                    title: (items) => {
+                                        if (!items || items.length === 0) return '';
+                                        return parsed.months[items[0].dataIndex] || '';
+                                    },
+                                    label: (ctx) => {
+                                        const itemName = ctx.dataset.label;
+                                        const percentage = ctx.parsed.y.toFixed(1);
+                                        const monthIdx = ctx.dataIndex;
+                                        
+                                        // Находим реальную сумму
+                                        const item = groupItems.find(it => it.name === itemName);
+                                        const realSum = item ? Math.abs(item.values[monthIdx]) : 0;
+                                        
+                                        return [
+                                            `${itemName}: ${percentage}%`,
+                                            `Сумма: ${(realSum / 1_000_000).toFixed(2)} млн ₽`
+                                        ];
+                                    }
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 1000,
+                            easing: 'easeOutQuart'
+                        }
+                    }
+                });
+                
+                return;
+            }
+            
+            // ИНАЧЕ - показываем стандартную диаграмму по группам
+            const expenseItems = parsed.expenses.filter(e => 
+                e.level === 3 && e.total < 0 && e.group && e.group !== 'Прочее'
+            );
+
+            const groupTotals = new Map();
+            expenseItems.forEach(item => {
+                if (!groupTotals.has(item.group)) {
+                    groupTotals.set(item.group, item.values.map(() => 0));
+                }
+                const totals = groupTotals.get(item.group);
+                item.values.forEach((v, i) => totals[i] += Math.abs(v));
+            });
+
+            // Вычисляем проценты
+            const monthTotals = parsed.months.map((_, i) => {
+                return Array.from(groupTotals.values()).reduce((sum, vals) => sum + vals[i], 0);
+            });
+
+            const datasets = Array.from(groupTotals.entries()).map(([group, values]) => ({
+                label: group,
+                data: values.map((v, i) => monthTotals[i] > 0 ? (v / monthTotals[i] * 100) : 0),
+                backgroundColor: colorPalette[group] || '#c4c4c4',
+                borderWidth: 0
+            }));
+
+            // Определяем размер шрифта в зависимости от ширины экрана
+            const isMobile = window.innerWidth < 600;
+            const isTablet = window.innerWidth >= 600 && window.innerWidth < 1024;
+            const fontSize = isMobile ? 9 : (isTablet ? 10 : 11);
+            const legendFontSize = isMobile ? 10 : (isTablet ? 11 : 11);
+            
+            // Возвращаем стандартный заголовок
+            const chartTitle = document.querySelector('#stackedChart').closest('.chart-card').querySelector('.chart-title');
+            if (chartTitle) {
+                chartTitle.textContent = 'Структура расходов по группам (нормированная диаграмма)';
+            }
+
+            charts.stacked = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: parsed.months,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: { display: false },
+                            ticks: { 
+                                font: { size: fontSize },
+                                maxRotation: isMobile ? 45 : 0,
+                                minRotation: isMobile ? 45 : 0
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            max: 100,
+                            ticks: {
+                                callback: value => value + '%',
+                                font: { size: fontSize }
+                            },
+                            grid: { 
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: isMobile ? 'bottom' : 'bottom',
+                            labels: { 
+                                padding: isMobile ? 8 : 15, 
+                                usePointStyle: true, 
+                                font: { size: legendFontSize },
+                                boxWidth: isMobile ? 8 : 12
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                            padding: isMobile ? 12 : 16,
+                            titleFont: { size: isMobile ? 13 : 15, weight: 'bold' },
+                            bodyFont: { size: isMobile ? 12 : 14 },
+                            bodySpacing: 4,
+                            callbacks: {
+                                title: (items) => {
+                                    if (!items || items.length === 0) return '';
+                                    return parsed.months[items[0].dataIndex] || '';
+                                },
+                                label: (ctx) => {
+                                    const groupName = ctx.dataset.label;
+                                    const percentage = ctx.parsed.y.toFixed(1);
+                                    
+                                    // Находим реальную сумму для этой группы в этом месяце
+                                    const monthIdx = ctx.dataIndex;
+                                    let realSum = 0;
+                                    
+                                    // Ищем все статьи этой группы
+                                    parsed.expenses.forEach(item => {
+                                        if (item.group === groupName && item.level === 3 && item.total < 0) {
+                                            if (monthIdx < item.values.length) {
+                                                realSum += Math.abs(item.values[monthIdx]);
+                                            }
+                                        }
+                                    });
+                                    
+                                    return [
+                                        `${groupName}: ${percentage}%`,
+                                        `Сумма: ${(realSum / 1_000_000).toFixed(2)} млн ₽`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+
+        function createTreemap(parsed) {
+            const ctx = document.getElementById('treemapChart');
+            
+            // Берем детальные статьи расходов
+            const expenseItems = parsed.expenses.filter(e => 
+                e.level === 3 && e.total < 0 && e.group && e.group !== 'Прочее'
+            );
+
+            if (expenseItems.length === 0) {
+                console.log('No expense items for treemap');
+                return;
+            }
+
+            // Создаем простой плоский массив для treemap
+            const treeData = expenseItems.map(item => ({
+                x: item.name,
+                y: Math.abs(item.total),
+                g: item.group
+            }));
+
+            const isMobile = window.innerWidth < 600;
+            const isTablet = window.innerWidth >= 600 && window.innerWidth < 1024;
+            const labelFontSize = isMobile ? 8 : (isTablet ? 9 : 10);
+
+            charts.treemap = new Chart(ctx, {
+                type: 'treemap',
+                data: {
+                    datasets: [{
+                        label: 'Расходы',
+                        tree: treeData,
+                        key: 'y',
+                        groups: ['x'],
+                        spacing: 0.5,
+                        borderWidth: 2,
+                        borderColor: 'white',
+                        backgroundColor: (ctx) => {
+                            if (ctx.type !== 'data') return 'transparent';
+                            const dataPoint = ctx.raw;
+                            const group = dataPoint.g;
+                            return colorPalette[group] || '#8eacc6';
+                        },
+                        labels: {
+                            display: true,
+                            formatter: (ctx) => {
+                                if (ctx.type !== 'data') return '';
+                                const value = ctx.raw.v;
+                                const label = ctx.raw.g;
+                                
+                                // Показываем только крупные блоки
+                                if (value < (isMobile ? 1000000 : 500000)) return '';
+                                
+                                const maxLen = isMobile ? 15 : 25;
+                                const shortLabel = label.substring(0, maxLen);
+                                
+                                // Форматируем число с пробелами
+                                const valueK = (value / 1000).toFixed(0);
+                                const formattedValue = valueK.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+                                
+                                return [shortLabel, `${formattedValue}k ₽`];
+                            },
+                            color: 'white',
+                            font: {
+                                size: labelFontSize,
+                                weight: '600'
+                            },
+                            align: 'center',
+                            position: 'middle'
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                            padding: isMobile ? 10 : 14,
+                            titleFont: { size: isMobile ? 12 : 14, weight: 'bold' },
+                            bodyFont: { size: isMobile ? 11 : 13 },
+                            displayColors: false,
+                            callbacks: {
+                                title: (items) => {
+                                    if (!items || !items[0]) return '';
+                                    return items[0].raw.g;
+                                },
+                                label: (item) => {
+                                    const value = item.raw.v;
+                                    return `Сумма: ${value.toLocaleString('ru-RU')} ₽`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createHeatmap(parsed) {
+            const ctx = document.getElementById('heatmapChart');
+            
+            // Берем детальные статьи расходов
+            let items = parsed.expenses.filter(e => 
+                e.level === 3 && e.total < 0 && e.group && e.group !== 'Прочее'
+            );
+
+            if (items.length === 0) {
+                console.log('No items for heatmap');
+                return;
+            }
+
+            // Сортируем по общей сумме и берем топ
+            const isMobile = window.innerWidth < 600;
+            const isTablet = window.innerWidth >= 600 && window.innerWidth < 1024;
+            const itemsToShow = isMobile ? 12 : (isTablet ? 16 : 18);
+            
+            items = items
+                .sort((a, b) => Math.abs(b.total) - Math.abs(a.total))
+                .slice(0, itemsToShow);
+
+            // Создаем короткие названия статей
+            const itemLabels = items.map(item => {
+                let name = item.name;
+                const maxLen = isMobile ? 22 : 35;
+                if (name.length > maxLen) {
+                    name = name.substring(0, maxLen - 3) + '...';
+                }
+                return name;
+            });
+
+            // ВАЖНО: Создаем ячейку для КАЖДОЙ комбинации месяц+статья
+            const data = [];
+            items.forEach((item, itemIndex) => {
+                parsed.months.forEach((month, monthIndex) => {
+                    const value = item.values[monthIndex];
+                    data.push({
+                        x: month,
+                        y: itemLabels[itemIndex],
+                        v: value < 0 ? Math.abs(value) : 0
+                    });
+                });
+            });
+
+            // Находим максимальное и минимальное значения (только ненулевые)
+            const values = data.map(d => d.v).filter(v => v > 0);
+            if (values.length === 0) {
+                console.log('No non-zero values for heatmap');
+                return;
+            }
+            
+            const maxValue = Math.max(...values);
+            const minValue = Math.min(...values);
+            
+            const fontSize = isMobile ? 7 : (isTablet ? 8 : 9);
+            const xFontSize = isMobile ? 8 : (isTablet ? 9 : 10);
+
+            charts.heatmap = new Chart(ctx, {
+                type: 'matrix',
+                data: {
+                    datasets: [{
+                        label: 'Расходы',
+                        data: data,
+                        backgroundColor(context) {
+                            if (context.type !== 'data') return 'transparent';
+                            
+                            const value = context.raw.v;
+                            if (!value || value === 0) {
+                                return 'rgba(250, 250, 250, 0.5)'; // почти белый для нулей
+                            }
+                            
+                            // Логарифмическая нормализация для лучшего контраста
+                            const logValue = Math.log10(value);
+                            const logMin = Math.log10(minValue);
+                            const logMax = Math.log10(maxValue);
+                            const normalized = (logValue - logMin) / (logMax - logMin);
+                            
+                            // ОЧЕНЬ КОНТРАСТНАЯ синяя палитра
+                            // От почти белого до глубокого темно-синего
+                            if (normalized < 0.12) {
+                                return 'rgba(245, 250, 255, 0.8)'; // почти белый
+                            } else if (normalized < 0.25) {
+                                return 'rgba(210, 230, 250, 0.9)'; // очень светлый голубой
+                            } else if (normalized < 0.38) {
+                                return 'rgba(175, 210, 240, 0.95)'; // светлый голубой
+                            } else if (normalized < 0.5) {
+                                return 'rgba(140, 190, 235, 1)'; // средне-светлый
+                            } else if (normalized < 0.62) {
+                                return 'rgba(100, 165, 225, 1)'; // средний синий
+                            } else if (normalized < 0.75) {
+                                return 'rgba(70, 135, 200, 1)'; // насыщенный синий
+                            } else if (normalized < 0.87) {
+                                return 'rgba(45, 100, 170, 1)'; // темный синий
+                            } else {
+                                return 'rgba(25, 65, 130, 1)'; // очень темный navy
+                            }
+                        },
+                        borderColor: 'rgba(255, 255, 255, 1)',
+                        borderWidth: 2,
+                        hoverBackgroundColor: 'rgba(255, 140, 40, 0.9)',
+                        hoverBorderColor: 'rgba(220, 100, 20, 1)',
+                        hoverBorderWidth: 3,
+                        width: ({chart}) => {
+                            const {chartArea} = chart;
+                            if (!chartArea) return 0;
+                            const isDesktop = window.innerWidth >= 1024;
+                            const cellWidth = (chartArea.right - chartArea.left) / parsed.months.length;
+                            return isDesktop ? cellWidth - 4 : cellWidth - 2;
+                        },
+                        height: ({chart}) => {
+                            const {chartArea} = chart;
+                            if (!chartArea) return 0;
+                            const cellHeight = (chartArea.bottom - chartArea.top) / items.length;
+                            return cellHeight - 2;
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: 3
+                    },
+                    plugins: {
+                        legend: { 
+                            display: false 
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+                            padding: isMobile ? 12 : 16,
+                            titleFont: { 
+                                size: isMobile ? 12 : 14, 
+                                weight: 'bold' 
+                            },
+                            bodyFont: { 
+                                size: isMobile ? 11 : 13 
+                            },
+                            displayColors: false,
+                            cornerRadius: 8,
+                            callbacks: {
+                                title(context) {
+                                    if (!context[0] || !context[0].raw) return '';
+                                    // Показываем полное название
+                                    const label = context[0].raw.y;
+                                    const itemIndex = itemLabels.indexOf(label);
+                                    if (itemIndex >= 0) {
+                                        return items[itemIndex].name;
+                                    }
+                                    return label;
+                                },
+                                label(context) {
+                                    if (!context.raw) return '';
+                                    const value = context.raw.v;
+                                    const month = context.raw.x;
+                                    
+                                    if (value === 0 || !value) {
+                                        return [`Месяц: ${month}`, 'Нет расходов'];
+                                    }
+                                    
+                                    // Логарифмическая нормализация
+                                    const logValue = Math.log10(value);
+                                    const logMin = Math.log10(minValue);
+                                    const logMax = Math.log10(maxValue);
+                                    const normalized = (logValue - logMin) / (logMax - logMin);
+                                    
+                                    return [
+                                        `Месяц: ${month}`,
+                                        `Сумма: ${value.toLocaleString('ru-RU')} ₽`,
+                                        `Уровень: ${(normalized * 100).toFixed(0)}%`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'category',
+                            labels: parsed.months,
+                            position: 'bottom',
+                            ticks: {
+                                font: { 
+                                    size: xFontSize, 
+                                    weight: '500' 
+                                },
+                                maxRotation: isMobile ? 45 : 0,
+                                minRotation: isMobile ? 45 : 0,
+                                autoSkip: false,
+                                padding: isMobile ? 4 : 8
+                            },
+                            grid: {
+                                display: false,
+                                drawBorder: true,
+                                borderColor: '#aaa',
+                                borderWidth: 2
+                            }
+                        },
+                        y: {
+                            type: 'category',
+                            labels: itemLabels,
+                            position: 'left',
+                            ticks: {
+                                font: { 
+                                    size: fontSize, 
+                                    weight: '500' 
+                                },
+                                autoSkip: false,
+                                padding: 4
+                            },
+                            grid: {
+                                display: false,
+                                drawBorder: true,
+                                borderColor: '#aaa',
+                                borderWidth: 2
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+
+        function createCashFlowChart(parsed) {
+            const ctx = document.getElementById('cashFlowChart');
+            
+            // Находим строки с итогами
+            const incomeItem = parsed.expenses.find(e => e.code === '1.2');
+            const expenseItem = parsed.expenses.find(e => e.code === '1.3');
+            const profitItem = parsed.expenses.find(e => e.code === '1' && e.name.includes('ПРИБЫЛЬ'));
+            
+            if (!incomeItem || !expenseItem || !profitItem) {
+                console.log('No data for cash flow chart');
+                return;
+            }
+            
+            const isMobile = window.innerWidth < 600;
+            const isTablet = window.innerWidth >= 600 && window.innerWidth < 1024;
+            
+            charts.cashFlow = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: parsed.months,
+                    datasets: [
+                        {
+                            label: 'Поступления',
+                            data: incomeItem.values,
+                            backgroundColor: 'rgba(72, 187, 120, 0.8)',
+                            borderColor: 'rgba(72, 187, 120, 1)',
+                            borderWidth: 2,
+                            order: 2
+                        },
+                        {
+                            label: 'Расходы',
+                            data: expenseItem.values.map(v => Math.abs(v)),
+                            backgroundColor: 'rgba(245, 101, 101, 0.8)',
+                            borderColor: 'rgba(245, 101, 101, 1)',
+                            borderWidth: 2,
+                            order: 2
+                        },
+                        {
+                            label: 'Прибыль',
+                            data: profitItem.values,
+                            type: 'line',
+                            borderColor: 'rgba(66, 153, 225, 1)',
+                            backgroundColor: 'rgba(66, 153, 225, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: isMobile ? 3 : 4,
+                            pointHoverRadius: isMobile ? 5 : 6,
+                            pointBackgroundColor: 'rgba(66, 153, 225, 1)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            tension: 0.4,
+                            fill: true,
+                            order: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                boxWidth: 12,
+                                padding: isMobile ? 10 : 15,
+                                font: {
+                                    size: isMobile ? 11 : 13,
+                                    weight: '500'
+                                },
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                            padding: isMobile ? 10 : 14,
+                            titleFont: { size: isMobile ? 12 : 14, weight: 'bold' },
+                            bodyFont: { size: isMobile ? 11 : 13 },
+                            bodySpacing: 6,
+                            callbacks: {
+                                label: (context) => {
+                                    const value = context.parsed.y;
+                                    const label = context.dataset.label;
+                                    return `${label}: ${(value / 1_000_000).toFixed(2)} млн ₽`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: { size: isMobile ? 9 : 11 },
+                                maxRotation: isMobile ? 45 : 0,
+                                minRotation: isMobile ? 45 : 0
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                font: { size: isMobile ? 9 : 11 },
+                                callback: (value) => `${(value / 1_000_000).toFixed(1)}м`
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1200,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+
+        function createProfitTrendChart(parsed) {
+            const ctx = document.getElementById('profitTrendChart');
+            
+            // Находим строку прибыли
+            const profitItem = parsed.expenses.find(e => e.code === '1' && e.name.includes('ПРИБЫЛЬ'));
+            
+            if (!profitItem) {
+                console.log('No data for profit trend chart');
+                return;
+            }
+            
+            const isMobile = window.innerWidth < 600;
+            const isTablet = window.innerWidth >= 600 && window.innerWidth < 1024;
+            
+            // Рассчитываем среднюю прибыль
+            const avgProfit = profitItem.values.reduce((a, b) => a + b, 0) / profitItem.values.length;
+            
+            charts.profitTrend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: parsed.months,
+                    datasets: [
+                        {
+                            label: 'Прибыль',
+                            data: profitItem.values,
+                            borderColor: (context) => {
+                                const chart = context.chart;
+                                const {ctx, chartArea} = chart;
+                                if (!chartArea) return 'rgba(66, 153, 225, 1)';
+                                
+                                const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                gradient.addColorStop(0, 'rgba(245, 101, 101, 1)');
+                                gradient.addColorStop(0.5, 'rgba(237, 137, 54, 1)');
+                                gradient.addColorStop(1, 'rgba(72, 187, 120, 1)');
+                                return gradient;
+                            },
+                            backgroundColor: (context) => {
+                                const chart = context.chart;
+                                const {ctx, chartArea} = chart;
+                                if (!chartArea) return 'rgba(66, 153, 225, 0.1)';
+                                
+                                const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                                gradient.addColorStop(0, 'rgba(245, 101, 101, 0.1)');
+                                gradient.addColorStop(0.5, 'rgba(237, 137, 54, 0.1)');
+                                gradient.addColorStop(1, 'rgba(72, 187, 120, 0.1)');
+                                return gradient;
+                            },
+                            borderWidth: 3,
+                            pointRadius: isMobile ? 4 : 5,
+                            pointHoverRadius: isMobile ? 6 : 8,
+                            pointBackgroundColor: (context) => {
+                                const value = context.parsed.y;
+                                if (value > 0) return 'rgba(72, 187, 120, 1)';
+                                if (value < 0) return 'rgba(245, 101, 101, 1)';
+                                return 'rgba(160, 174, 192, 1)';
+                            },
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Средняя',
+                            data: new Array(parsed.months.length).fill(avgProfit),
+                            borderColor: 'rgba(160, 174, 192, 0.6)',
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            tension: 0
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                boxWidth: 12,
+                                padding: isMobile ? 10 : 15,
+                                font: {
+                                    size: isMobile ? 11 : 13,
+                                    weight: '500'
+                                },
+                                usePointStyle: true,
+                                filter: (item) => item.text !== 'Средняя' || !isMobile
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                            padding: isMobile ? 10 : 14,
+                            titleFont: { size: isMobile ? 12 : 14, weight: 'bold' },
+                            bodyFont: { size: isMobile ? 11 : 13 },
+                            bodySpacing: 6,
+                            callbacks: {
+                                label: (context) => {
+                                    const value = context.parsed.y;
+                                    const label = context.dataset.label;
+                                    const sign = value >= 0 ? '+' : '';
+                                    return `${label}: ${sign}${(value / 1_000_000).toFixed(2)} млн ₽`;
+                                },
+                                afterBody: (context) => {
+                                    if (context[0].datasetIndex === 0) {
+                                        const value = context[0].parsed.y;
+                                        const diff = value - avgProfit;
+                                        const sign = diff >= 0 ? '+' : '';
+                                        return `\nОтклонение от средней: ${sign}${(diff / 1_000_000).toFixed(2)} млн ₽`;
+                                    }
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: { size: isMobile ? 9 : 11 },
+                                maxRotation: isMobile ? 45 : 0,
+                                minRotation: isMobile ? 45 : 0
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                font: { size: isMobile ? 9 : 11 },
+                                callback: (value) => {
+                                    const sign = value >= 0 ? '+' : '';
+                                    return `${sign}${(value / 1_000_000).toFixed(1)}м`;
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 1200,
+                        easing: 'easeOutQuart'
+                    }
+                }
+            });
+        }
+
+        function setupFilters(parsed) {
+            originalParsedData = JSON.parse(JSON.stringify(parsed));
+            currentParsedData = parsed;
+            
+            const filtersPanel = document.getElementById('filtersPanel');
+            const periodFilter = document.getElementById('periodFilter');
+            const groupFilter = document.getElementById('groupFilter');
+            
+            // Собираем уникальные группы
+            const groups = new Set();
+            parsed.expenses.forEach(item => {
+                if (item.group && item.group !== 'Прочее') {
+                    groups.add(item.group);
+                }
+            });
+            
+            // Заполняем фильтр групп
+            groupFilter.innerHTML = '<option value="all">Все группы</option>';
+            Array.from(groups).sort().forEach(group => {
+                const option = document.createElement('option');
+                option.value = group;
+                option.textContent = group;
+                groupFilter.appendChild(option);
+            });
+            
+            // Показываем панель фильтров
+            filtersPanel.style.display = 'flex';
+            
+            // Обработчики изменения фильтров
+            periodFilter.addEventListener('change', applyFilters);
+            groupFilter.addEventListener('change', applyFilters);
+        }
+
+        function applyFilters() {
+            const periodFilter = document.getElementById('periodFilter');
+            const groupFilter = document.getElementById('groupFilter');
+            
+            const period = periodFilter.value;
+            const group = groupFilter.value;
+            
+            // Создаем отфильтрованную копию данных
+            let filtered = JSON.parse(JSON.stringify(originalParsedData));
+            
+            // Применяем фильтр периода
+            if (period !== 'all') {
+                const monthsToShow = parseInt(period);
+                const totalMonths = filtered.months.length;
+                const startIndex = Math.max(0, totalMonths - monthsToShow);
+                
+                filtered.months = filtered.months.slice(startIndex);
+                filtered.expenses.forEach(item => {
+                    item.values = item.values.slice(startIndex);
+                    item.total = item.values.reduce((a, b) => a + b, 0);
+                });
+            }
+            
+            // Применяем фильтр группы (для детализированных графиков)
+            if (group !== 'all') {
+                filtered.expenses = filtered.expenses.map(item => {
+                    if (item.level === 3 && item.group !== group) {
+                        // Обнуляем значения для статей не из выбранной группы
+                        return {
+                            ...item,
+                            values: item.values.map(() => 0),
+                            total: 0
+                        };
+                    }
+                    return item;
+                });
+            }
+            
+            currentParsedData = filtered;
+            
+            // Пересоздаем графики
+            showLoading();
+            
+            // Уничтожаем старые графики
+            Object.values(charts).forEach(chart => {
+                if (chart && typeof chart.destroy === 'function') {
+                    chart.destroy();
+                }
+            });
+            charts = {};
+            
+            // Очищаем canvas элементы
+            const canvases = ['cashFlowChart', 'profitTrendChart', 'stackedChart', 'treemapChart', 'heatmapChart'];
+            canvases.forEach(id => {
+                const canvas = document.getElementById(id);
+                if (canvas) {
+                    const parent = canvas.parentNode;
+                    const newCanvas = canvas.cloneNode(true);
+                    parent.replaceChild(newCanvas, canvas);
+                }
+            });
+            
+            // Обновляем инфо-панель
+            displayInfoPanel(filtered);
+            
+            // Создаем графики заново
+            setTimeout(() => {
+                try {
+                    createCashFlowChart(currentParsedData);
+                    createProfitTrendChart(currentParsedData);
+                    createStackedChart(currentParsedData, group); // Передаем выбранную группу
+                    createTreemap(currentParsedData);
+                    createHeatmap(currentParsedData);
+                    hideLoading();
+                } catch (error) {
+                    showError('Ошибка при обновлении графиков: ' + error.message);
+                    console.error(error);
+                }
+            }, 100);
+        }
+    </script>
+
+
+</body></html>
