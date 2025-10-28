@@ -1,13 +1,14 @@
 <!DOCTYPE html>
-<html lang="ru"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Дашборд расходов</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-treemap@2.3.0/dist/chartjs-chart-treemap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"></script>
     <style>
@@ -511,7 +512,7 @@
             'Логистика': '#d4b88a',
             'Маркетинг': '#c4a4c4',
             'Фонд оплаты труда': '#7db8b8',
-            'Налоги': '#e09090',
+            'Налоги': '#c49a9a',
             'Поступления': '#6ba8d4',
             'Инвестиции': '#9bb09b',
             'Финансовые операции': '#b8a8c4',
@@ -1119,6 +1120,9 @@
                 return;
             }
 
+            // Рассчитываем общую сумму расходов для процентов
+            const totalExpenses = expenseItems.reduce((sum, item) => sum + Math.abs(item.total), 0);
+
             // Создаем простой плоский массив для treemap
             const treeData = expenseItems.map(item => ({
                 x: item.name,
@@ -1160,11 +1164,14 @@
                                 const maxLen = isMobile ? 15 : 25;
                                 const shortLabel = label.substring(0, maxLen);
                                 
+                                // Рассчитываем процент от общей суммы расходов
+                                const percentage = ((value / totalExpenses) * 100).toFixed(1);
+                                
                                 // Форматируем число с пробелами
                                 const valueK = (value / 1000).toFixed(0);
                                 const formattedValue = valueK.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
                                 
-                                return [shortLabel, `${formattedValue}k ₽`];
+                                return [shortLabel, `${formattedValue}k ₽`, `${percentage}%`];
                             },
                             color: 'white',
                             font: {
@@ -1194,7 +1201,11 @@
                                 },
                                 label: (item) => {
                                     const value = item.raw.v;
-                                    return `Сумма: ${value.toLocaleString('ru-RU')} ₽`;
+                                    const percentage = ((value / totalExpenses) * 100).toFixed(1);
+                                    return [
+                                        `Сумма: ${value.toLocaleString('ru-RU')} ₽`,
+                                        `Процент: ${percentage}% от общих расходов`
+                                    ];
                                 }
                             }
                         }
@@ -1815,6 +1826,5 @@
             }, 100);
         }
     </script>
-
-
-</body></html>
+</body>
+</html>
