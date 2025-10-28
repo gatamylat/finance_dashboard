@@ -979,10 +979,12 @@
                 });
                 
                 // Создаем dataset для каждой статьи
+                // ВСЕ статьи одной группы - ОДНОГО цвета (цвет группы)
+                const groupColor = getGroupColor(selectedGroup);
                 const datasets = groupItems.map(item => ({
                     label: item.name,
                     data: item.values.map((v, i) => monthTotals[i] > 0 ? (Math.abs(v) / monthTotals[i] * 100) : 0),
-                    backgroundColor: generateColorForItem(item.name, selectedGroup),
+                    backgroundColor: groupColor,
                     borderWidth: 0
                 }));
                 
@@ -1213,9 +1215,16 @@
         function createTreemap(parsed, colorByGroup = true) {
             const ctx = document.getElementById('treemapChart');
             
-            // Берем детальные статьи расходов
+            // Исключаем доходные/операционные группы
+            const excludedGroups = ['Финансовые операции', 'Инвестиции', 'Поступления'];
+            
+            // Берем детальные статьи расходов (ТОЛЬКО расходные группы)
             const expenseItems = parsed.expenses.filter(e => 
-                e.level === 3 && e.total < 0 && e.group && e.group !== 'Прочее'
+                e.level === 3 && 
+                e.total < 0 && 
+                e.group && 
+                e.group !== 'Прочее' &&
+                !excludedGroups.includes(e.group)
             );
 
             if (expenseItems.length === 0) {
@@ -1251,10 +1260,12 @@
                         backgroundColor: (ctx) => {
                             if (ctx.type !== 'data') return 'transparent';
                             
+                            const dataPoint = ctx.raw;
+                            const group = dataPoint.g;
+                            
                             // Если режим "цвета по группам" включен
                             if (colorByGroup) {
-                                const dataPoint = ctx.raw;
-                                const group = dataPoint.g;
+                                // Цвет группы (все статьи группы одного цвета)
                                 return getGroupColor(group);
                             }
                             
