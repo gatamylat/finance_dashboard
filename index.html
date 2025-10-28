@@ -979,12 +979,11 @@
                 });
                 
                 // Создаем dataset для каждой статьи
-                // ВСЕ статьи одной группы - ОДНОГО цвета (цвет группы)
-                const groupColor = getGroupColor(selectedGroup);
+                // С вариациями цвета для различия статей
                 const datasets = groupItems.map(item => ({
                     label: item.name,
                     data: item.values.map((v, i) => monthTotals[i] > 0 ? (Math.abs(v) / monthTotals[i] * 100) : 0),
-                    backgroundColor: groupColor,
+                    backgroundColor: generateColorForItem(item.name, selectedGroup),
                     borderWidth: 0
                 }));
                 
@@ -1241,6 +1240,19 @@
                 y: Math.abs(item.total),
                 g: item.group
             }));
+            
+            // Отладка: выводим группы и их цвета
+            console.log('=== Treemap Data ===');
+            console.log('Total items:', treeData.length);
+            const groupColors = new Map();
+            treeData.forEach(item => {
+                if (!groupColors.has(item.g)) {
+                    const color = getGroupColor(item.g);
+                    groupColors.set(item.g, color);
+                    console.log(`Группа "${item.g}": ${color}`);
+                }
+            });
+            console.log('===================');
 
             const isMobile = window.innerWidth < 600;
             const isTablet = window.innerWidth >= 600 && window.innerWidth < 1024;
