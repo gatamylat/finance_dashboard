@@ -127,6 +127,44 @@
             padding-bottom: 10px;
             border-bottom: 2px solid #e2e8f0;
             line-height: 1.3;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .chart-title-text {
+            flex: 1;
+        }
+
+        .chart-title-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: clamp(11px, 2.5vw, 13px);
+            font-weight: 500;
+            color: #4a5568;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+
+        .chart-checkbox input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: #4299e1;
+        }
+
+        .chart-checkbox:hover {
+            color: #2d3748;
         }
 
         .chart-container {
@@ -488,7 +526,15 @@
             </div>
 
             <div class="chart-card">
-                <div class="chart-title">Детализация расходов по статьям (древовидная карта)</div>
+                <div class="chart-title">
+                    <span class="chart-title-text">Детализация расходов по статьям (древовидная карта)</span>
+                    <div class="chart-title-controls">
+                        <label class="chart-checkbox">
+                            <input type="checkbox" id="treemapColorByGroup" checked>
+                            <span>Цвета по группам</span>
+                        </label>
+                    </div>
+                </div>
                 <div class="chart-container tall">
                     <canvas id="treemapChart"></canvas>
                 </div>
@@ -512,7 +558,7 @@
             'Логистика': '#d4b88a',
             'Маркетинг': '#c4a4c4',
             'Фонд оплаты труда': '#7db8b8',
-            'Налоги': '#c49a9a',
+            'Налоги': '#b8b89a',
             'Поступления': '#6ba8d4',
             'Инвестиции': '#9bb09b',
             'Финансовые операции': '#b8a8c4',
@@ -574,8 +620,11 @@
                         
                         // Пересоздаем с задержкой
                         setTimeout(() => {
+                            const treemapColorCheckbox = document.getElementById('treemapColorByGroup');
+                            const colorByGroup = treemapColorCheckbox ? treemapColorCheckbox.checked : true;
+                            
                             createStackedChart(currentParsedData);
-                            createTreemap(currentParsedData);
+                            createTreemap(currentParsedData, colorByGroup);
                             createHeatmap(currentParsedData);
                         }, 50);
                     } catch (e) {
@@ -699,7 +748,7 @@
                         createCashFlowChart(parsed);
                         createProfitTrendChart(parsed);
                         createStackedChart(parsed);
-                        createTreemap(parsed);
+                        createTreemap(parsed, true); // По умолчанию чекбокс включен
                         createHeatmap(parsed);
                         hideLoading();
                     } catch (error) {
@@ -1107,7 +1156,7 @@
             });
         }
 
-        function createTreemap(parsed) {
+        function createTreemap(parsed, colorByGroup = true) {
             const ctx = document.getElementById('treemapChart');
             
             // Берем детальные статьи расходов
@@ -1147,9 +1196,16 @@
                         borderColor: 'white',
                         backgroundColor: (ctx) => {
                             if (ctx.type !== 'data') return 'transparent';
-                            const dataPoint = ctx.raw;
-                            const group = dataPoint.g;
-                            return colorPalette[group] || '#8eacc6';
+                            
+                            // Если режим "цвета по группам" включен
+                            if (colorByGroup) {
+                                const dataPoint = ctx.raw;
+                                const group = dataPoint.g;
+                                return colorPalette[group] || '#8eacc6';
+                            }
+                            
+                            // Иначе - все блоки одного нейтрального цвета
+                            return '#9ab5cc';
                         },
                         labels: {
                             display: true,
@@ -1743,6 +1799,24 @@
             // Обработчики изменения фильтров
             periodFilter.addEventListener('change', applyFilters);
             groupFilter.addEventListener('change', applyFilters);
+            
+            // Обработчик чекбокса цветов treemap
+            const treemapColorCheckbox = document.getElementById('treemapColorByGroup');
+            if (treemapColorCheckbox) {
+                treemapColorCheckbox.addEventListener('change', () => {
+                    // Пересоздаем только treemap с новым режимом
+                    if (charts.treemap) {
+                        charts.treemap.destroy();
+                    }
+                    const canvas = document.getElementById('treemapChart');
+                    if (canvas) {
+                        const parent = canvas.parentNode;
+                        const newCanvas = canvas.cloneNode(true);
+                        parent.replaceChild(newCanvas, canvas);
+                    }
+                    createTreemap(currentParsedData, treemapColorCheckbox.checked);
+                });
+            }
         }
 
         function applyFilters() {
@@ -1813,10 +1887,13 @@
             // Создаем графики заново
             setTimeout(() => {
                 try {
+                    const treemapColorCheckbox = document.getElementById('treemapColorByGroup');
+                    const colorByGroup = treemapColorCheckbox ? treemapColorCheckbox.checked : true;
+                    
                     createCashFlowChart(currentParsedData);
                     createProfitTrendChart(currentParsedData);
                     createStackedChart(currentParsedData, group); // Передаем выбранную группу
-                    createTreemap(currentParsedData);
+                    createTreemap(currentParsedData, colorByGroup);
                     createHeatmap(currentParsedData);
                     hideLoading();
                 } catch (error) {
