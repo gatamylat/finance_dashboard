@@ -558,23 +558,77 @@
             'Логистика': '#d4b88a',
             'Маркетинг': '#c4a4c4',
             'Фонд оплаты труда': '#7db8b8',
-            'Налоги': '#b8b89a',
+            'Налоги': '#c49a9a',
             'Поступления': '#6ba8d4',
             'Инвестиции': '#9bb09b',
             'Финансовые операции': '#b8a8c4',
             'Прочее': '#c4c4c4'
         };
 
+        // Генератор уникального цвета для любой строки (группы)
+        function generateColorFromString(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            
+            // Генерируем приятные пастельные цвета
+            const hue = Math.abs(hash % 360);
+            const saturation = 35 + (Math.abs(hash >> 8) % 25); // 35-60%
+            const lightness = 60 + (Math.abs(hash >> 16) % 15); // 60-75%
+            
+            return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+        }
+
+        // Функция получения цвета группы (с fallback на генерацию)
+        function getGroupColor(groupName) {
+            // Сначала ищем в палитре
+            if (colorPalette[groupName]) {
+                return colorPalette[groupName];
+            }
+            
+            // Если не нашли - генерируем уникальный цвет
+            return generateColorFromString(groupName);
+        }
+
         // Генератор цветов для статей внутри группы
         function generateColorForItem(itemName, groupName) {
-            const baseColor = colorPalette[groupName];
+            const baseColor = getGroupColor(groupName);
             if (!baseColor) return '#8eacc6';
             
-            // Получаем RGB из hex
-            const hex = baseColor.replace('#', '');
-            const r = parseInt(hex.substr(0, 2), 16);
-            const g = parseInt(hex.substr(2, 2), 16);
-            const b = parseInt(hex.substr(4, 2), 16);
+            // Парсим цвет (поддержка hex, rgb, hsl)
+            let r, g, b;
+            
+            if (baseColor.startsWith('#')) {
+                // Hex формат
+                const hex = baseColor.replace('#', '');
+                r = parseInt(hex.substr(0, 2), 16);
+                g = parseInt(hex.substr(2, 2), 16);
+                b = parseInt(hex.substr(4, 2), 16);
+            } else if (baseColor.startsWith('rgb')) {
+                // RGB формат
+                const match = baseColor.match(/\d+/g);
+                if (match) {
+                    r = parseInt(match[0]);
+                    g = parseInt(match[1]);
+                    b = parseInt(match[2]);
+                }
+            } else if (baseColor.startsWith('hsl')) {
+                // HSL формат - создаем временный элемент для конвертации
+                const temp = document.createElement('div');
+                temp.style.color = baseColor;
+                document.body.appendChild(temp);
+                const computed = window.getComputedStyle(temp).color;
+                document.body.removeChild(temp);
+                const match = computed.match(/\d+/g);
+                if (match) {
+                    r = parseInt(match[0]);
+                    g = parseInt(match[1]);
+                    b = parseInt(match[2]);
+                }
+            }
+            
+            if (!r || !g || !b) return baseColor;
             
             // Создаем вариации цвета на основе хеша названия статьи
             let hash = 0;
@@ -1051,7 +1105,7 @@
             const datasets = Array.from(groupTotals.entries()).map(([group, values]) => ({
                 label: group,
                 data: values.map((v, i) => monthTotals[i] > 0 ? (v / monthTotals[i] * 100) : 0),
-                backgroundColor: colorPalette[group] || '#c4c4c4',
+                backgroundColor: getGroupColor(group),
                 borderWidth: 0
             }));
 
@@ -1201,7 +1255,7 @@
                             if (colorByGroup) {
                                 const dataPoint = ctx.raw;
                                 const group = dataPoint.g;
-                                return colorPalette[group] || '#8eacc6';
+                                return getGroupColor(group);
                             }
                             
                             // Иначе - все блоки одного нейтрального цвета
