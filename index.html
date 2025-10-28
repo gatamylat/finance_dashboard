@@ -1238,7 +1238,8 @@
             const treeData = expenseItems.map(item => ({
                 x: item.name,
                 y: Math.abs(item.total),
-                g: item.group
+                g: item.group,
+                c: getGroupColor(item.group) // Добавляем цвет сразу в данные!
             }));
             
             // Отладка: выводим группы и их цвета
@@ -1247,9 +1248,8 @@
             const groupColors = new Map();
             treeData.forEach(item => {
                 if (!groupColors.has(item.g)) {
-                    const color = getGroupColor(item.g);
-                    groupColors.set(item.g, color);
-                    console.log(`Группа "${item.g}": ${color}`);
+                    groupColors.set(item.g, item.c);
+                    console.log(`Группа "${item.g}": ${item.c}`);
                 }
             });
             console.log('===================');
@@ -1272,13 +1272,33 @@
                         backgroundColor: (ctx) => {
                             if (ctx.type !== 'data') return 'transparent';
                             
-                            const dataPoint = ctx.raw;
-                            const group = dataPoint.g;
+                            // Отладка: что приходит в ctx
+                            if (Math.random() < 0.05) { // Выводим только 5% для читаемости
+                                console.log('backgroundColor ctx:', {
+                                    raw: ctx.raw,
+                                    parsed: ctx.parsed,
+                                    dataIndex: ctx.dataIndex
+                                });
+                            }
                             
                             // Если режим "цвета по группам" включен
                             if (colorByGroup) {
-                                // Цвет группы (все статьи группы одного цвета)
-                                return getGroupColor(group);
+                                // Получаем имя элемента из контекста
+                                const itemName = ctx.raw.g || ctx.raw._data?.g;
+                                
+                                // Ищем соответствующий элемент в исходных данных
+                                const dataItem = treeData.find(d => d.x === itemName || d.g === itemName);
+                                
+                                if (dataItem && dataItem.c) {
+                                    return dataItem.c;
+                                }
+                                
+                                // Fallback - пробуем получить группу и вычислить цвет
+                                if (itemName) {
+                                    return getGroupColor(itemName);
+                                }
+                                
+                                return '#9ab5cc';
                             }
                             
                             // Иначе - все блоки одного нейтрального цвета
